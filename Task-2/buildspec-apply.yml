@@ -1,0 +1,41 @@
+version: 0.2
+run-as: root
+env:
+  variables:
+    TF_FILES: ""
+    TF_VERSION: ""
+    name_prefix: ""
+    name_suffix: ""
+    environment: ""
+phases:
+    install:
+        run-as: root
+        runtime-versions:
+          python: 3.7
+    pre_build:
+        commands:
+            - echo "Entering build phase..."
+            - sudo apt update
+            - curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+            - sudo apt install unzip
+            - wget https://releases.hashicorp.com/terraform/1.2.2/terraform_1.2.2_linux_amd64.zip
+            - unzip terraform_1.2.2_linux_amd64.zip
+            - sudo mv terraform /usr/local/bin
+
+    build:
+        run-as: root
+        commands:
+            - echo "Entering build phase..."
+            - echo Build started on `date`
+            - |
+              echo "Creating Lambda Modules ...";
+              terraform apply --auto-approve;
+    post_build:
+        commands:
+           - echo " Completed Terraform Apply phase... "
+           - echo Terraform apply completed on `date`
+artifacts:
+  files:
+    - '**/*'
+  name: apply-$(date +%Y-%m-%d)
+  discard-paths: no
