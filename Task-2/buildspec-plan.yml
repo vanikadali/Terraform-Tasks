@@ -1,0 +1,53 @@
+version: 0.2
+run-as: root
+env:
+  variables:
+    TF_FILES: ""
+    TF_VERSION: ""
+    name_prefix: ""
+    name_suffix: ""
+    environment: ""
+phases:
+    install:
+        run-as: root
+        runtime-versions:
+          python: 3.7
+        commands:
+            - echo "Entering install phase..."
+            - sudo apt update
+            - curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+            - sudo apt install unzip
+            - wget https://releases.hashicorp.com/terraform/1.2.2/terraform_1.2.2_linux_amd64.zip
+            - unzip terraform_1.2.2_linux_amd64.zip
+            - sudo mv terraform /usr/local/bin
+            - curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/dl/v0.16.0/terraform-docs-v0.16.0-$(uname)-amd64.tar.gz
+            - tar -xzf terraform-docs.tar.gz
+            - sudo chmod +x terraform-docs
+            - mv terraform-docs /usr/local/bin/terraform-docs
+
+    pre_build:
+        commands:
+            - echo "Entering build phase..."
+    build:
+        run-as: root
+        commands:
+            - echo "Entering build phase..."
+            - echo Build started on `date`
+            - |
+              echo "Processing lambda modules ...";
+              terraform init;
+              tflint;
+              tflint --init;
+              terraform-docs markdown table;
+              terraform fmt;
+              terraform validate;
+              terraform plan;
+    post_build:
+        commands:
+           - echo " Completed Terraform Plan phase... "
+           - echo plan creation completed on `date`
+artifacts:
+  files:
+    - '**/*'
+  name: plan-$(date +%Y-%m-%d)
+  discard-paths: no
